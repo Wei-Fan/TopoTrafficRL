@@ -17,6 +17,7 @@
 
 # Ignore build, devel, and logs folder
 build
+out
 *.egg-info
 __pycache__
 .vscode
