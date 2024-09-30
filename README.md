@@ -2,9 +2,26 @@
 
 Implementation of reinforcement learning based dense traffic awareness method.
 
+## Install
+
+1. Dependencies
+    ```sh
+    pip3 install gymnasium==0.29.1
+    pip3 install numpy==1.26.4
+    pip3 install moviepy imageio_ffmpeg tensorboard tensorboardx pyvirtualdisplay IPython
+    sudo apt-get install -y xvfb ffmpeg
+    ```
+2. Install TopoTrafficRL
+    ```sh
+    pip3 install .
+    ```
+
 ## Usage
 
-Please refer to this [link](https://github.com/Wei-Fan/mnote/blob/master/decision_making/project_ws/README.md).
+1. Run the example
+    ```sh
+    python3 scripts/example.py
+    ```
 
 ## License
 - The environment design is based on HighwayEnv by Edouard Leurent. The original github link is [HighwayEnv](https://github.com/Farama-Foundation/HighwayEnv).
