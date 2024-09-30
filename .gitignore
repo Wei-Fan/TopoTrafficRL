@@ -16,5 +16,7 @@
 *.bag
 
 # Ignore build, devel, and logs folder
+build
+*.egg-info
 __pycache__
 .vscode
