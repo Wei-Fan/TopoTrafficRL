@@ -55,5 +55,8 @@ def _register_ttrl_envs():
     # u_turn_env.py
     register(id="u-turn-v0", entry_point="ttrl_env.envs.u_turn_env:UTurnEnv")
 
+    # topo_intersection_env.py
+    register(id="intersection-topo-v0", entry_point="ttrl_env.envs.topo_intersection_env:TopoIntersectionEnv")
+
 
 _register_ttrl_envs()

@@ -8,15 +8,14 @@ from ttrl_agent.agents.common.factory import load_agent, load_environment
 from ttrl_agent.trainer.evaluation import Evaluation
 from utils import show_videos
 
-# Change the current working directory to rl-agents/scripts/
+# Change the current working directory to scripts/
 script_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_path)
 
-# use environment configuratino file, which is defined in project_ws/rl-agents/scripts/configs/IntersectionEnv/env.json
-
+# use environment configuratino file, which is defined in /configs/IntersectionEnv/env.json
 env_config = os.path.join(script_path, 'configs', 'IntersectionEnv', 'env.json')
 
-# use agent defined by rl-agents, which is defined in project_ws/rl-agents/scripts/configs/IntersectionEnv/agents/DQNAgent/ego_attention_2h.json
+# use agent defined by rl-agents, which is defined in /configs/IntersectionEnv/agents/DQNAgent/ego_attention_2h.json
 agent_config = os.path.join(script_path, 'configs', 'IntersectionEnv', 'agents', 'DQNAgent', 'ego_attention_2h.json')
 
 # Load an environment from the configuration file.
@@ -26,7 +25,7 @@ env = load_environment(env_config)
 agent = load_agent(agent_config, env)
 
 # # Create the evaluation of an agent interacting with an environment to maximize its expected reward.
-NUM_EPISODES = 1000  #@param {type: "integer"}
+NUM_EPISODES = 100  #@param {type: "integer"}
 evaluation = Evaluation(env, agent, num_episodes=NUM_EPISODES, display_env=True, display_agent=True)
 print(f"Ready to train {agent} on {env}")
 
