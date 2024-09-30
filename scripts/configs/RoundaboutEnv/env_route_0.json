@@ -1,0 +1,6 @@
+{
+    "id": "roundabout-v0",
+    "import_module": "ttrl_env",
+    "incoming_vehicle_destination": 0,
+    "other_vehicles_type": "ttrl_env.vehicle.behavior.LinearVehicle"
+}

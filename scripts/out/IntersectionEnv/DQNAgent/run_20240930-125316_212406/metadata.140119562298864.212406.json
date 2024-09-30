@@ -1,0 +1,152 @@
+{
+    "agent": {
+        "__class__": "<class 'ttrl_agent.agents.deep_q_network.pytorch.DQNAgent'>",
+        "batch_size": 64,
+        "device": "cuda:best",
+        "double": true,
+        "exploration": {
+            "final_temperature": 0.05,
+            "method": "EpsilonGreedy",
+            "tau": 15000,
+            "temperature": 1.0
+        },
+        "gamma": 0.95,
+        "loss_function": "l2",
+        "memory_capacity": 15000,
+        "model": {
+            "attention_layer": {
+                "dropout_factor": 0,
+                "feature_size": 64,
+                "heads": 2,
+                "type": "EgoAttention"
+            },
+            "embedding_layer": {
+                "activation": "RELU",
+                "in": 7,
+                "layers": [
+                    64,
+                    64
+                ],
+                "out": null,
+                "reshape": false,
+                "type": "MultiLayerPerceptron"
+            },
+            "in": 105,
+            "layers": [
+                128,
+                128
+            ],
+            "others_embedding_layer": {
+                "activation": "RELU",
+                "in": 7,
+                "layers": [
+                    64,
+                    64
+                ],
+                "out": null,
+                "reshape": false,
+                "type": "MultiLayerPerceptron"
+            },
+            "out": 3,
+            "output_layer": {
+                "activation": "RELU",
+                "in": 64,
+                "layers": [
+                    64,
+                    64
+                ],
+                "out": 3,
+                "reshape": false,
+                "type": "MultiLayerPerceptron"
+            },
+            "presence_feature_idx": 0,
+            "self_attention_layer": null,
+            "type": "EgoAttentionNetwork"
+        },
+        "n_steps": 1,
+        "optimizer": {
+            "k": 5,
+            "lr": 0.0005,
+            "type": "ADAM",
+            "weight_decay": 0
+        },
+        "target_update": 512
+    },
+    "env": {
+        "__class__": "<class 'gymnasium.wrappers.order_enforcing.OrderEnforcing'>",
+        "action": {
+            "lateral": false,
+            "longitudinal": true,
+            "target_speeds": [
+                0,
+                4.5,
+                9
+            ],
+            "type": "DiscreteMetaAction"
+        },
+        "arrived_reward": 1,
+        "centering_position": [
+            0.5,
+            0.6
+        ],
+        "collision_reward": -5,
+        "controlled_vehicles": 1,
+        "destination": "o1",
+        "duration": 13,
+        "high_speed_reward": 1,
+        "id": "intersection-v0",
+        "import_module": "ttrl_env",
+        "initial_vehicle_count": 10,
+        "manual_control": false,
+        "normalize_reward": false,
+        "observation": {
+            "absolute": true,
+            "features": [
+                "presence",
+                "x",
+                "y",
+                "vx",
+                "vy",
+                "cos_h",
+                "sin_h"
+            ],
+            "features_range": {
+                "vx": [
+                    -20,
+                    20
+                ],
+                "vy": [
+                    -20,
+                    20
+                ],
+                "x": [
+                    -100,
+                    100
+                ],
+                "y": [
+                    -100,
+                    100
+                ]
+            },
+            "order": "shuffled",
+            "type": "Kinematics",
+            "vehicles_count": 15
+        },
+        "offroad_terminal": false,
+        "offscreen_rendering": false,
+        "other_vehicles_type": "ttrl_env.vehicle.behavior.IDMVehicle",
+        "policy_frequency": 1,
+        "real_time_rendering": false,
+        "render_agent": true,
+        "reward_speed_range": [
+            7.0,
+            9.0
+        ],
+        "scaling": 7.15,
+        "screen_height": 600,
+        "screen_width": 600,
+        "show_trajectories": false,
+        "simulation_frequency": 15,
+        "spawn_probability": 0.6
+    }
+}
