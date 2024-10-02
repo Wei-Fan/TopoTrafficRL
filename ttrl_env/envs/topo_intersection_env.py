@@ -39,7 +39,7 @@ class TopoIntersectionEnv(AbstractEnv):
                     "lateral": False,
                     "target_speeds": [0, 4.0, 9.0, 14],
                 },
-                "duration": 15,  # [s]
+                "duration": 20,  # [s]
                 "destination": "o1",
                 "controlled_vehicles": 1,
                 "initial_vehicle_count": 10,
@@ -54,6 +54,8 @@ class TopoIntersectionEnv(AbstractEnv):
                 "reward_speed_range": [7.0, 11.0],
                 "normalize_reward": False,
                 "offroad_terminal": False,
+                "show_trajectories": True,
+                "speed_limit": 10
             }
         )
         return config
@@ -144,18 +146,18 @@ class TopoIntersectionEnv(AbstractEnv):
 
         The horizontal road has the right of way. More precisely, the levels of priority are:
             - 3 for horizontal straight lanes and right-turns
-            - 1 for vertical straight lanes and right-turns
-            - 2 for horizontal left-turns
+            - 2 for vertical straight lanes and right-turns
+            - 1 for horizontal left-turns
             - 0 for vertical left-turns
 
         The code for nodes in the road network is:
-        (o:outer | i:inner + [r:right, l:left]) + (0:south | 1:west | 2:north | 3:east)
+        (o:outer | i:inner + [r:right, l:left, o:out]) + (0:south | 1:west | 2:north | 3:east)
 
         :return: the intersection road
         """
         lane_width = AbstractLane.DEFAULT_WIDTH
         right_turn_radius = lane_width + 5  # [m}
-        left_turn_radius = right_turn_radius + lane_width  # [m}
+        left_turn_radius = right_turn_radius + 2 * lane_width  # [m}
         outer_distance = right_turn_radius + lane_width / 2
         access_length = 50 + 50  # [m]
 
@@ -164,27 +166,38 @@ class TopoIntersectionEnv(AbstractEnv):
         for corner in range(4):
             angle = np.radians(90 * corner)
             is_horizontal = corner % 2
-            priority = 3 if is_horizontal else 1
+            priority = 3 if is_horizontal else 2
             rotation = np.array(
                 [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
             )
             # Incoming
             start = rotation @ np.array(
-                [lane_width / 2, access_length + outer_distance]
+                [0.0, access_length + outer_distance]
             )
-            end = rotation @ np.array([lane_width / 2, outer_distance])
+            end = rotation @ np.array([0.0, outer_distance])
+            net.add_lane(
+                "o" + str(corner),
+                "il" + str(corner),
+                StraightLane(
+                    start, end, line_types=[s, c], priority=priority, speed_limit=self.config["speed_limit"]
+                ),
+            )
+            start = rotation @ np.array(
+                [lane_width, access_length + outer_distance]
+            )
+            end = rotation @ np.array([lane_width, outer_distance])
             net.add_lane(
                 "o" + str(corner),
                 "ir" + str(corner),
                 StraightLane(
-                    start, end, line_types=[s, c], priority=priority, speed_limit=10
+                    start, end, line_types=[s, c], priority=priority, speed_limit=self.config["speed_limit"]
                 ),
             )
             # Right turn
-            r_center = rotation @ (np.array([outer_distance, outer_distance]))
+            r_center = rotation @ (np.array([outer_distance + lane_width / 2, outer_distance + lane_width / 2]))
             net.add_lane(
                 "ir" + str(corner),
-                "il" + str((corner - 1) % 4),
+                "io" + str((corner - 1) % 4),
                 CircularLane(
                     r_center,
                     right_turn_radius,
@@ -192,21 +205,14 @@ class TopoIntersectionEnv(AbstractEnv):
                     angle + np.radians(270),
                     line_types=[n, c],
                     priority=priority,
-                    speed_limit=10,
+                    speed_limit=self.config["speed_limit"],
                 ),
             )
             # Left turn
-            l_center = rotation @ (
-                np.array(
-                    [
-                        -left_turn_radius + lane_width / 2,
-                        left_turn_radius - lane_width / 2,
-                    ]
-                )
-            )
+            l_center = rotation @ (np.array([-left_turn_radius, left_turn_radius - lane_width]))
             net.add_lane(
-                "ir" + str(corner),
-                "il" + str((corner + 1) % 4),
+                "il" + str(corner),
+                "io" + str((corner + 1) % 4),
                 CircularLane(
                     l_center,
                     left_turn_radius,
@@ -214,27 +220,27 @@ class TopoIntersectionEnv(AbstractEnv):
                     angle + np.radians(-90),
                     clockwise=False,
                     line_types=[n, n],
-                    priority=priority - 1,
-                    speed_limit=10,
+                    priority=priority - 2,
+                    speed_limit=self.config["speed_limit"],
                 ),
             )
             # Straight
-            start = rotation @ np.array([lane_width / 2, outer_distance])
-            end = rotation @ np.array([lane_width / 2, -outer_distance])
+            start = rotation @ np.array([lane_width, outer_distance])
+            end = rotation @ np.array([lane_width, -outer_distance])
             net.add_lane(
                 "ir" + str(corner),
-                "il" + str((corner + 2) % 4),
+                "io" + str((corner + 2) % 4),
                 StraightLane(
                     start, end, line_types=[s, n], priority=priority, speed_limit=10
                 ),
             )
             # Exit
             start = rotation @ np.flip(
-                [lane_width / 2, access_length + outer_distance], axis=0
+                [lane_width, access_length + outer_distance], axis=0
             )
-            end = rotation @ np.flip([lane_width / 2, outer_distance], axis=0)
+            end = rotation @ np.flip([lane_width, outer_distance], axis=0)
             net.add_lane(
-                "il" + str((corner - 1) % 4),
+                "io" + str((corner - 1) % 4),
                 "o" + str((corner - 1) % 4),
                 StraightLane(
                     end, start, line_types=[n, c], priority=priority, speed_limit=10
@@ -286,7 +292,7 @@ class TopoIntersectionEnv(AbstractEnv):
         self.controlled_vehicles = []
         for ego_id in range(0, self.config["controlled_vehicles"]):
             ego_lane = self.road.network.get_lane(
-                (f"o{ego_id % 4}", f"ir{ego_id % 4}", 0)
+                (f"o{ego_id % 4}", f"il{ego_id % 4}", 0)
             )
             destination = self.config["destination"] or "o" + str(
                 self.np_random.integers(1, 4)

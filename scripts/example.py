@@ -25,7 +25,7 @@ env = load_environment(env_config)
 agent = load_agent(agent_config, env)
 
 # # Create the evaluation of an agent interacting with an environment to maximize its expected reward.
-NUM_EPISODES = 100  #@param {type: "integer"}
+NUM_EPISODES = 20000  #@param {type: "integer"}
 evaluation = Evaluation(env, agent, num_episodes=NUM_EPISODES, display_env=True, display_agent=True)
 print(f"Ready to train {agent} on {env}")
 
@@ -36,7 +36,7 @@ evaluation.train()
 env = load_environment(env_config)
 env.config["offscreen_rendering"] = True
 agent = load_agent(agent_config, env)
-evaluation = Evaluation(env, agent, num_episodes=20, training = False, recover = True)
+evaluation = Evaluation(env, agent, num_episodes=1000, training = False, recover = True)
 evaluation.test()
 test_path = evaluation.run_directory / "test"
 show_videos(test_path)
