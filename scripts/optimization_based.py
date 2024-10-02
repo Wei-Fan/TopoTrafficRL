@@ -7,6 +7,7 @@ import json
 import importlib
 import gymnasium as gym
 from ttrl_agent.agents.common.factory import load_environment
+from topo_agent import TopoAgent
 from simulation import Simulation
 from utils import show_videos
 
@@ -17,8 +18,8 @@ os.chdir(script_path)
 # use environment configuratino file, which is defined in /configs/IntersectionEnv/env.json
 env_config = os.path.join(script_path, 'configs', 'IntersectionEnv', 'env.json')
 
-# use agent defined by rl-agents, which is defined in /configs/IntersectionEnv/agents/DQNAgent/ego_attention_2h.json
-agent_config = os.path.join(script_path, 'configs', 'IntersectionEnv', 'agents', 'DQNAgent', 'ego_attention_2h.json')
+# use agent # TODO: update config file
+agent_config = os.path.join(script_path, 'configs', 'IntersectionEnv', 'agents', 'topo.json')
 
 # Load an environment from the configuration file.
 env = load_environment(env_config)
@@ -27,13 +28,12 @@ env = load_environment(env_config)
 # The agent class must have:
 # def reset(self): # reset agent
 # def seed(self, seed=None): # init agent
-with open(agent_config) as f:
-    agent_config = json.loads(f.read())
-if "__class__" in agent_config:
-    path = agent_config['__class__'].split("'")[1]
-    module_name, class_name = path.rsplit(".", 1)
-    agent_class = getattr(importlib.import_module(module_name), class_name)
-    agent = agent_class(env, agent_config)
+# def act(self, state): # plan action at current state. This is where optimization based method implemented.
+
+if not isinstance(agent_config, dict):
+    with open(agent_config) as f:
+        agent_config = json.loads(f.read())
+agent = TopoAgent(env, agent_config)
 
 
 # Run the simulation.

@@ -1,0 +1,37 @@
+{
+    "model": {
+        "attention_layer": {
+            "heads": 2
+        },
+        "embedding_layer": {
+            "type": "MultiLayerPerceptron",
+            "layers": [64, 64],
+            "reshape": false,
+            "in": 7
+        },
+        "others_embedding_layer": {
+            "type": "MultiLayerPerceptron",
+            "layers": [64, 64],
+            "reshape": false,
+            "in": 7
+        },
+        "self_attention_layer": null,
+        "output_layer": {
+            "type": "MultiLayerPerceptron",
+            "layers": [64, 64],
+            "reshape": false
+        },
+        "layers": [128, 128]
+    },
+    "gamma": 0.95,
+    "n_steps": 1,
+    "batch_size": 64,
+    "memory_capacity": 15000,
+    "target_update": 512,
+    "exploration": {
+        "method": "EpsilonGreedy",
+        "tau": 15000,
+        "temperature": 1.0,
+        "final_temperature": 0.05
+    }
+}
