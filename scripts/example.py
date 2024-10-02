@@ -26,7 +26,7 @@ env = load_environment(env_config)
 agent = load_agent(agent_config, env)
 
 # # Create the evaluation of an agent interacting with an environment to maximize its expected reward.
-NUM_EPISODES = 1000  #@param {type: "integer"}
+NUM_EPISODES = 100  #@param {type: "integer"}
 evaluation = Evaluation(env, agent, num_episodes=NUM_EPISODES, display_env=True, display_agent=True)
 print(f"Ready to train {agent} on {env}")
 
