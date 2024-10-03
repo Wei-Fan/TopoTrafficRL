@@ -21,7 +21,7 @@ class TopoIntersectionEnv(AbstractEnv):
             {
                 "observation": {
                     "type": "Kinematics",
-                    "vehicles_count": 15,
+                    "vehicles_count": 16,
                     "features": ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"],
                     "features_range": {
                         "x": [-100, 100],
@@ -39,7 +39,7 @@ class TopoIntersectionEnv(AbstractEnv):
                     "lateral": False,
                     "target_speeds": [0, 4.0, 9.0, 14],
                 },
-                "duration": 20,  # [s]
+                "duration": 12,  # [s]
                 "destination": "o1",
                 "controlled_vehicles": 1,
                 "initial_vehicle_count": 10,
@@ -50,8 +50,8 @@ class TopoIntersectionEnv(AbstractEnv):
                 "scaling": 5.5 * 1.3,
                 "collision_reward": -5,
                 "high_speed_reward": 1,
-                "arrived_reward": 1,
-                "reward_speed_range": [7.0, 11.0],
+                "arrived_reward": 2,
+                "reward_speed_range": [8.0, 11.0],
                 "normalize_reward": False,
                 "offroad_terminal": False,
                 "show_trajectories": True,
@@ -159,7 +159,7 @@ class TopoIntersectionEnv(AbstractEnv):
         right_turn_radius = lane_width + 5  # [m}
         left_turn_radius = right_turn_radius + 2 * lane_width  # [m}
         outer_distance = right_turn_radius + lane_width / 2
-        access_length = 50 + 50  # [m]
+        access_length = 80  # [m]
 
         net = RoadNetwork()
         n, c, s = LineType.NONE, LineType.CONTINUOUS, LineType.STRIPED
@@ -281,11 +281,11 @@ class TopoIntersectionEnv(AbstractEnv):
 
         # Challenger vehicle
         self._spawn_vehicle(
-            60,
+            50,
             spawn_probability=1,
-            go_straight=True,
+            must_straight=True,
             position_deviation=0.1,
-            speed_deviation=0,
+            speed_deviation=0.1,
         )
 
         # Controlled vehicles
@@ -299,7 +299,7 @@ class TopoIntersectionEnv(AbstractEnv):
             )
             ego_vehicle = self.action_type.vehicle_class(
                 self.road,
-                ego_lane.position(60 + 5 * self.np_random.normal(1), 0),
+                ego_lane.position(50 + 5 * self.np_random.normal(1), 0),
                 speed=ego_lane.speed_limit,
                 heading=ego_lane.heading_at(60),
             )
@@ -329,21 +329,25 @@ class TopoIntersectionEnv(AbstractEnv):
         position_deviation: float = 1.0,
         speed_deviation: float = 1.0,
         spawn_probability: float = 0.6,
-        go_straight: bool = False,
+        must_straight: bool = False,
     ) -> None:
         if self.np_random.uniform() > spawn_probability:
             return
-
+        if must_straight:
+            which_lane = "ir"
+        else:
+            is_straight = self.np_random.choice(range(2), size=1)[0]
+            which_lane = "ir" if is_straight == 1 else "il" 
         route = self.np_random.choice(range(4), size=2, replace=False)
-        route[1] = (route[0] + 2) % 4 if go_straight else route[1]
+        route[1] = (route[0] + 2) % 4 if must_straight else route[1]
         vehicle_type = utils.class_from_path(self.config["other_vehicles_type"])
         vehicle = vehicle_type.make_on_lane(
             self.road,
-            ("o" + str(route[0]), "ir" + str(route[0]), 0),
+            ("o" + str(route[0]), which_lane + str(route[0]), 0),
             longitudinal=(
                 longitudinal + 5 + self.np_random.normal() * position_deviation
             ),
-            speed=8 + self.np_random.normal() * speed_deviation,
+            speed=10 + self.np_random.normal() * speed_deviation,
         )
         for v in self.road.vehicles:
             if np.linalg.norm(v.position - vehicle.position) < 15:
