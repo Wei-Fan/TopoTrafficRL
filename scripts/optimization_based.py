@@ -29,7 +29,8 @@ env = load_environment(env_config)
 # def reset(self): # reset agent
 # def seed(self, seed=None): # init agent
 # def act(self, state): # plan action at current state. This is where optimization based method implemented.
-
+# def record(self, state, action, reward, next_state, done, info): # Record a transition by performing a Deep Q-Network iteration
+# def save(self, filename): save the agent
 if not isinstance(agent_config, dict):
     with open(agent_config) as f:
         agent_config = json.loads(f.read())
@@ -37,7 +38,6 @@ agent = TopoAgent(env, agent_config)
 
 
 # Run the simulation.
-# TODO: breakdown evaluation
 NUM_EPISODES = 20000  #@param {type: "integer"}
 simulation = Simulation(env, agent, num_episodes=NUM_EPISODES, display_env=True, display_agent=True)
 print(f"Ready to run {agent} on {env}")

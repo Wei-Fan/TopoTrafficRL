@@ -3,17 +3,13 @@ import json
 import logging
 import os
 import time
-from multiprocessing.pool import Pool
 from pathlib import Path
 import numpy as np
 from tensorboardX import SummaryWriter
 from gymnasium.wrappers import RecordVideo, RecordEpisodeStatistics, capped_cubic_video_schedule
 
 import ttrl_agent.trainer.logger
-from ttrl_agent.agents.common.factory import load_environment, load_agent
 from ttrl_agent.agents.common.graphics import AgentGraphics
-from ttrl_agent.agents.common.memory import Transition
-from ttrl_agent.utils import near_split, zip_with_singletons
 from ttrl_agent.configuration import serialize
 from ttrl_agent.trainer.graphics import RewardViewer
 
@@ -140,7 +136,7 @@ class Simulation(object):
             self.reset(seed=self.episode)
             rewards = []
             start_time = time.time()
-            while not terminal: # TODO: continue breakdown from here
+            while not terminal:
                 # Step until a terminal step is reached
                 reward, terminal = self.step()
                 rewards.append(reward)
@@ -189,102 +185,6 @@ class Simulation(object):
             pass
 
         return reward, terminal
-
-    def run_batched_episodes(self):
-        """
-            Alternatively,
-            - run multiple sample-collection jobs in parallel
-            - update model
-        """
-        episode = 0
-        episode_duration = 14  # TODO: use a fixed number of samples instead
-        batch_sizes = near_split(self.num_episodes * episode_duration, size_bins=self.agent.config["batch_size"])
-        self.agent.reset()
-        for batch, batch_size in enumerate(batch_sizes):
-            logger.info("[BATCH={}/{}]---------------------------------------".format(batch+1, len(batch_sizes)))
-            logger.info("[BATCH={}/{}][run_batched_episodes] #samples={}".format(batch+1, len(batch_sizes),
-                                                                                 len(self.agent.memory)))
-            logger.info("[BATCH={}/{}]---------------------------------------".format(batch+1, len(batch_sizes)))
-            # Save current agent
-            model_path = self.save_agent_model(identifier=batch)
-
-            # Prepare workers
-            env_config, agent_config = serialize(self.env), serialize(self.agent)
-            cpu_processes = self.agent.config["processes"] or os.cpu_count()
-            workers_sample_counts = near_split(batch_size, cpu_processes)
-            workers_starts = list(np.cumsum(np.insert(workers_sample_counts[:-1], 0, 0)) + np.sum(batch_sizes[:batch]))
-            base_seed = batch * cpu_processes
-            workers_seeds = [base_seed + i for i in range(cpu_processes)]
-            workers_params = list(zip_with_singletons(env_config,
-                                                      agent_config,
-                                                      workers_sample_counts,
-                                                      workers_starts,
-                                                      workers_seeds,
-                                                      model_path,
-                                                      batch))
-
-            # Collect trajectories
-            logger.info("Collecting {} samples with {} workers...".format(batch_size, cpu_processes))
-            if cpu_processes == 1:
-                results = [Simulation.collect_samples(*workers_params[0])]
-            else:
-                with Pool(processes=cpu_processes) as pool:
-                    results = pool.starmap(Simulation.collect_samples, workers_params)
-            trajectories = [trajectory for worker in results for trajectory in worker]
-
-            # Fill memory
-            for trajectory in trajectories:
-                if trajectory[-1].terminal:  # Check whether the episode was properly finished before logging
-                    self.after_all_episodes(episode, [transition.reward for transition in trajectory])
-                episode += 1
-                [self.agent.record(*transition) for transition in trajectory]
-
-            # Fit model
-            self.agent.update()
-
-    @staticmethod
-    def collect_samples(environment_config, agent_config, count, start_time, seed, model_path, batch):
-        """
-            Collect interaction samples of an agent / environment pair.
-
-            Note that the last episode may not terminate, when enough samples have been collected.
-
-        :param dict environment_config: the environment configuration
-        :param dict agent_config: the agent configuration
-        :param int count: number of samples to collect
-        :param start_time: the initial local time of the agent
-        :param seed: the env/agent seed
-        :param model_path: the path to load the agent model from
-        :param batch: index of the current batch
-        :return: a list of trajectories, i.e. lists of Transitions
-        """
-        env = load_environment(environment_config)
-
-        if batch == 0:  # Force pure exploration during first batch
-            agent_config["exploration"]["final_temperature"] = 1
-        agent_config["device"] = "cpu"
-        agent = load_agent(agent_config, env)
-        agent.load(model_path)
-        agent.seed(seed)
-        agent.set_time(start_time)
-
-        state = env.reset(seed=seed)
-        episodes = []
-        trajectory = []
-        for _ in range(count):
-            action = agent.act(state)
-            next_state, reward, done, info = env.step(action)
-            trajectory.append(Transition(state, action, reward, next_state, done, info))
-            if done:
-                state = env.reset()
-                episodes.append(trajectory)
-                trajectory = []
-            else:
-                state = next_state
-        if trajectory:  # Unfinished episode
-            episodes.append(trajectory)
-        env.close()
-        return episodes
 
     def save_agent_model(self, identifier, do_save=True):
         # Create the folder if it doesn't exist
