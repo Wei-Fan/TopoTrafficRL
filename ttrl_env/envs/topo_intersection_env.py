@@ -337,7 +337,7 @@ class TopoIntersectionEnv(AbstractEnv):
             which_lane = "ir"
         else:
             is_straight = self.np_random.choice(range(2), size=1)[0]
-            which_lane = "ir" if is_straight == 1 else "il" 
+            which_lane = "ir" if is_straight == 1 else "il"
         route = self.np_random.choice(range(4), size=2, replace=False)
         route[1] = (route[0] + 2) % 4 if must_straight else route[1]
         vehicle_type = utils.class_from_path(self.config["other_vehicles_type"])
