@@ -73,13 +73,6 @@ class TopoAgent(Configurable, ABC):
         loss = self.loss_function(state_action_values, target_state_action_value)
         return loss, target_state_action_value, batch
 
-    def get_batch_state_values(self, states):
-        values, actions = self.value_net(torch.tensor(states, dtype=torch.float).to(self.device)).max(1)
-        return values.data.cpu().numpy(), actions.data.cpu().numpy()
-
-    def get_batch_state_action_values(self, states):
-        return self.value_net(torch.tensor(states, dtype=torch.float).to(self.device)).data.cpu().numpy()
-
     def save(self, filename):
         state = {'state_dict': self.value_net.state_dict(),
                  'optimizer': self.optimizer.state_dict()}
@@ -147,21 +140,6 @@ class TopoAgent(Configurable, ABC):
         if self.steps % self.config["target_update"] == 0:
             self.target_net.load_state_dict(self.value_net.state_dict())
 
-    def get_state_value(self, state):
-        """
-        :param state: s, an environment state
-        :return: V, its state-value
-        """
-        values, actions = self.get_batch_state_values([state])
-        return values[0], actions[0]
-
-    def get_state_action_values(self, state):
-        """
-        :param state: s, an environment state
-        :return: [Q(a1,s), ..., Q(an,s)] the array of its action-values for each actions
-        """
-        return self.get_batch_state_action_values([state])[0]
-
     def step_optimizer(self, loss):
         raise NotImplementedError
 
@@ -171,19 +149,8 @@ class TopoAgent(Configurable, ABC):
     def reset(self):
         pass
 
-    def action_distribution(self, state):
-        self.previous_state = state
-        values = self.get_state_action_values(state)
-        self.exploration_policy.update(values)
-        return self.exploration_policy.get_distribution()
-
     def set_time(self, time):
         self.exploration_policy.set_time(time)
-
-    def eval(self):
-        self.training = False
-        self.config['exploration']['method'] = "Greedy"
-        self.exploration_policy = exploration_factory(self.config["exploration"], self.env.action_space)
 
     def plan(self, state):
         """
@@ -206,9 +173,7 @@ class TopoAgent(Configurable, ABC):
             cos_h = vehicle_info["cos_h"]
             sin_h = vehicle_info["sin_h"]
 
-        values = self.get_state_action_values(state)
-        self.exploration_policy.update(values)
-        return self.exploration_policy.sample()
+        # return action
 
     def set_directory(self, directory):
         self.directory = directory
