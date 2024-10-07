@@ -50,6 +50,5 @@ simulation.run()
 # env.config["offscreen_rendering"] = True
 # agent = load_agent(agent_config, env)
 # evaluation = Evaluation(env, agent, num_episodes=1000, training = False, recover = True)
-# evaluation.test()
 # test_path = evaluation.run_directory / "test"
 # show_videos(test_path)

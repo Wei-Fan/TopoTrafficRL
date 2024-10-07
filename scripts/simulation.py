@@ -146,7 +146,7 @@ class Simulation(object):
             Plan a sequence of actions according to the agent policy, and step the environment accordingly.
         """
         # Query agent for actions sequence
-        actions = self.agent.plan(self.observation) # TODO: work on act(self.observation)
+        actions = self.agent.plan(self.observation)
         if not actions:
             raise Exception("The agent did not plan any action")
 
