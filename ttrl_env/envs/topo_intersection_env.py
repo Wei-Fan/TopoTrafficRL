@@ -359,7 +359,7 @@ class TopoIntersectionEnv(AbstractEnv):
 
     def _clear_vehicles(self) -> None:
         is_leaving = (
-            lambda vehicle: "il" in vehicle.lane_index[0]
+            lambda vehicle: "io" in vehicle.lane_index[0]
             and "o" in vehicle.lane_index[1]
             and vehicle.lane.local_coordinates(vehicle.position)[0]
             >= vehicle.lane.length - 4 * vehicle.LENGTH

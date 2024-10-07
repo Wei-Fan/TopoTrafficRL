@@ -39,7 +39,7 @@ agent = TopoAgent(env, agent_config)
 
 # Run the simulation.
 NUM_EPISODES = 20000  #@param {type: "integer"}
-simulation = Simulation(env, agent, num_episodes=NUM_EPISODES, display_env=True, display_agent=True)
+simulation = Simulation(env, agent, num_episodes=NUM_EPISODES, display_env=True)
 print(f"Ready to run {agent} on {env}")
 simulation.run()
 

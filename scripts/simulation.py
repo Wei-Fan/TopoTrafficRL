@@ -37,7 +37,6 @@ class Simulation(object):
                  sim_seed=None,
                  recover=None,
                  display_env=True,
-                 display_agent=True,
                  display_rewards=True,
                  close_env=True,
                  step_callback_fn=None):
@@ -92,17 +91,6 @@ class Simulation(object):
         self.recover = recover
         if self.recover:
             self.load_agent_model(self.recover)
-
-        if display_agent:
-            try:
-                # Render the agent within the environment viewer, if supported
-                self.env.render()
-                self.env.unwrapped.viewer.directory = self.run_directory
-                self.env.unwrapped.viewer.set_agent_display(
-                    lambda agent_surface, sim_surface: AgentGraphics.display(self.agent, agent_surface, sim_surface))
-                self.env.unwrapped.viewer.directory = self.run_directory
-            except AttributeError:
-                logger.info("The environment viewer doesn't support agent rendering.")
         self.reward_viewer = None
         if display_rewards:
             self.reward_viewer = RewardViewer()
@@ -158,7 +146,7 @@ class Simulation(object):
             Plan a sequence of actions according to the agent policy, and step the environment accordingly.
         """
         # Query agent for actions sequence
-        actions = self.agent.plan(self.observation) # TODO: replace by act(self.observation)
+        actions = self.agent.plan(self.observation) # TODO: work on act(self.observation)
         if not actions:
             raise Exception("The agent did not plan any action")
 

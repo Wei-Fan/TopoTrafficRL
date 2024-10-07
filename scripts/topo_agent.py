@@ -26,7 +26,7 @@ class TopoAgent(Configurable, ABC):
         self.exploration_policy = exploration_factory(self.config["exploration"], self.env.action_space)
         self.training = True
         self.previous_state = None
-        size_model_config(self.env, self.config["model"]) # update self.config based on observation_space and action_space
+        size_model_config(self.env, self.config["model"]) # update self.config's size based on observation_space and action_space
         # TODO: init agent model here
         self.steps = 0
 
@@ -136,26 +136,6 @@ class TopoAgent(Configurable, ABC):
             self.step_optimizer(loss)
             self.update_target_network()
 
-    def act(self, state, step_exploration_time=True):
-        """
-            Act according to the state-action value model and an exploration policy
-        :param state: current state
-        :param step_exploration_time: step the exploration schedule
-        :return: an action
-        """
-        self.previous_state = state
-        if step_exploration_time:
-            self.exploration_policy.step_time()
-        # Handle multi-agent observations
-        # TODO: it would be more efficient to forward a batch of states
-        if isinstance(state, tuple):
-            return tuple(self.act(agent_state, step_exploration_time=False) for agent_state in state)
-
-        # Single-agent setting
-        values = self.get_state_action_values(state)
-        self.exploration_policy.update(values)
-        return self.exploration_policy.sample()
-
     def sample_minibatch(self):
         if len(self.memory) < self.config["batch_size"]:
             return None
@@ -210,9 +190,42 @@ class TopoAgent(Configurable, ABC):
             Plan an optimal trajectory from an initial state.
 
         :param state: s, the initial state of the agent
-        :return: [a0, a1, a2...], a sequence of actions to perform
+                      np.ndarray
+        :return: [a0, a1, a2...], a sequence of actions to perform, where a is a int
+                 ACTIONS_LONGI = {0: "STOP", 1: "SLOWER", 2: "IDLE", 3: "FASTER"}
         """
-        return [self.act(state)]
+        self.previous_state = state
+        vehicles_data = self.convert_obs_to_dict(state)
+        ego = vehicles_data["vehicle_0"]
+        # TODO: find an action based on observation
+        for vehicle_info in vehicles_data:
+            x = vehicle_info["x"]
+            y = vehicle_info["y"]
+            vx = vehicle_info["vx"]
+            vy = vehicle_info["vy"]
+            cos_h = vehicle_info["cos_h"]
+            sin_h = vehicle_info["sin_h"]
+
+        values = self.get_state_action_values(state)
+        self.exploration_policy.update(values)
+        return self.exploration_policy.sample()
 
     def set_directory(self, directory):
         self.directory = directory
+
+    def convert_obs_to_dict(self, obs_array):
+        """
+            Convert the observation output (numpy array) into a dictionary of dictionaries.
+
+        :param obs_array: numpy array from the observe() method.
+        :return: dict of dicts where each key is 'vehicle_i' and the value is a dict of features.
+        """
+        features = self.env.config["observation"]["features"]
+        vehicles_data = {}
+        for i, row in enumerate(obs_array):
+            # Map each row to a dictionary with feature names as keys.
+            vehicle_dict = {feature: row[j] for j, feature in enumerate(features)}
+            # Assign this dictionary to a vehicle key.
+            vehicles_data[f'vehicle_{i}'] = vehicle_dict
+
+        return vehicles_data
